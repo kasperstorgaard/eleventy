@@ -130,12 +130,13 @@ class TemplateData {
     let paths = [
       `${dir}/**/*.json`, // covers .11tydata.json too
       `${dir}/**/*${this.config.jsDataFileSuffix}.cjs`,
-      `${dir}/**/*${this.config.jsDataFileSuffix}.js`
+      `${dir}/**/*${this.config.jsDataFileSuffix}.js`,
+      `${dir}/**/*${this.config.jsDataFileSuffix}.ts`,
     ];
 
     if (this.hasUserDataExtensions()) {
       let userPaths = this.getUserDataExtensions().map(
-        extension => `${dir}/**/*.${extension}` // covers .11tydata.{extension} too
+        (extension) => `${dir}/**/*.${extension}` // covers .11tydata.{extension} too
       );
       paths = userPaths.concat(paths);
     }
@@ -146,7 +147,8 @@ class TemplateData {
   async getTemplateJavaScriptDataFileGlob() {
     let dir = await this.getInputDir();
     return TemplatePath.addLeadingDotSlashArray([
-      `${dir}/**/*${this.config.jsDataFileSuffix}.js`
+      `${dir}/**/*${this.config.jsDataFileSuffix}.js`,
+      `${dir}/**/*${this.config.jsDataFileSuffix}.ts`,
     ]);
   }
 
@@ -162,7 +164,7 @@ class TemplateData {
   }
 
   getGlobalDataExtensionPriorities() {
-    return this.getUserDataExtensions().concat(["json", "cjs", "js"]);
+    return this.getUserDataExtensions().concat(["json", "cjs", "js", "ts"]);
   }
 
   static calculateExtensionPriority(path, priorities) {
@@ -182,7 +184,7 @@ class TemplateData {
     fsBench.before();
     let paths = await fastglob(await this.getGlobalDataGlob(), {
       caseSensitiveMatch: false,
-      dot: true
+      dot: true,
     });
     fsBench.after();
 
@@ -365,6 +367,7 @@ class TemplateData {
     // ignoreProcessing = true for local data files
     if (
       extension === "js" ||
+      extension === "ts" ||
       extension === "cjs" ||
       (extension === "json" && (ignoreProcessing || !this.dataTemplateEngine))
     ) {
@@ -381,6 +384,7 @@ class TemplateData {
       deleteRequireCache(localPath);
 
       let returnValue = require(localPath);
+      console.log(localPath);
       if (typeof returnValue === "function") {
         returnValue = await returnValue();
       }
@@ -420,6 +424,7 @@ class TemplateData {
     paths.push(base + dataSuffix + ".js");
     paths.push(base + dataSuffix + ".cjs");
     paths.push(base + dataSuffix + ".json");
+    paths.push(base + dataSuffix + ".ts");
 
     // inject user extensions
     this._pushExtensionsToPaths(paths, base + dataSuffix, extensions);
